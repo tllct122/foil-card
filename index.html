@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Foil — holo card maker</title>
+<meta name="description" content="Turn your art into a holographic foil card that shimmers when you tilt it. Save it as an image or a video for Reels and Shorts.">
+<meta name="theme-color" content="#2A1C38">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Varela+Round&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* a card shop's display case: plum velvet under a warm spotlight, cream price cards */
+  --velvet: #2A1C38; --velvet-deep: #1C1226; --cream: #FFF8EC; --ink: #2A1C38; --ink-soft: #6E5D7E; --line: #E7DCCB;
+  --holo: linear-gradient(115deg, #FF9AC1, #FFD27A 22%, #9BF0C8 45%, #8EC5FF 68%, #C9A2FF 90%);
+  --display: "Unbounded", "Varela Round", sans-serif;
+  --ui: "Varela Round", "PingFang HK", "PingFang TC", "Microsoft JhengHei", "Noto Sans HK", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100dvh; color: var(--ink); font-family: var(--ui); background: var(--velvet-deep); -webkit-tap-highlight-color: transparent; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid #8EC5FF; outline-offset: 2px; border-radius: 8px; }
+
+.app { display: grid; grid-template-columns: 1fr; min-height: 100dvh; }
+@media (min-width: 900px) { .app { grid-template-columns: minmax(0, 1fr) 380px; } }
+
+/* ---------- the display case ---------- */
+.case { position: relative; min-height: min(78dvh, 720px); display: grid; grid-template-rows: auto 1fr auto; overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 30%, rgba(255,228,190,.20), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    var(--velvet); }
+@media (min-width: 900px) { .case { min-height: 100dvh; position: sticky; top: 0; height: 100dvh; } }
+.top { display: flex; align-items: center; justify-content: space-between; padding: max(14px, env(safe-area-inset-top)) 18px 0; color: var(--cream); }
+.brand { font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: .02em; margin: 0; }
+.brand small { display: block; font-family: var(--ui); font-weight: 400; font-size: 12.5px; letter-spacing: 0; opacity: .7; margin-top: 2px; }
+.lang { display: flex; padding: 3px; border-radius: 999px; background: rgba(255,248,236,.1); box-shadow: inset 0 0 0 1px rgba(255,248,236,.25); }
+.lang button { border: 0; background: transparent; color: var(--cream); font-size: 13px; padding: 6px 10px; border-radius: 999px; }
+.lang button[aria-pressed="true"] { background: var(--cream); color: var(--ink); }
+#stage { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.drop { position: absolute; inset: 0; display: none; place-items: center; background: rgba(28,18,38,.75); color: var(--cream); font-size: 18px; border: 3px dashed rgba(255,248,236,.6); z-index: 5; }
+.drop.show { display: grid; }
+.hint { text-align: center; color: rgba(255,248,236,.72); font-size: 13.5px; padding: 0 16px max(14px, env(safe-area-inset-bottom)); margin: 0; }
+.fallback { display: none; place-items: center; color: var(--cream); padding: 24px; text-align: center; }
+
+/* ---------- the controls: cream price cards ---------- */
+.controls { background: var(--cream); padding: 20px 18px 40px; }
+@media (min-width: 900px) { .controls { max-height: 100dvh; overflow-y: auto; } }
+.group { padding: 14px 0 16px; border-bottom: 1px solid var(--line); }
+.group:last-of-type { border-bottom: 0; }
+.group h2 { margin: 0 0 10px; font-size: 15px; font-weight: 700; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn { border: 0; border-radius: 12px; padding: 11px 16px; font-weight: 700; font-size: 15px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--ink); }
+.btn.primary { background: var(--ink); color: var(--cream); box-shadow: none; }
+.btn.holo { background: var(--holo); color: var(--ink); box-shadow: none; }
+.btn:disabled { opacity: .55; cursor: progress; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { border: 0; border-radius: 999px; padding: 8px 13px; font-size: 14px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--line); }
+.seg button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ink); font-weight: 700; }
+.foils { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.foils button { border: 0; background: transparent; padding: 0; font-size: 12px; text-align: center; color: var(--ink-soft); }
+.foils .chip { display: block; aspect-ratio: 5 / 7; border-radius: 9px; margin-bottom: 5px; box-shadow: inset 0 0 0 1.5px var(--line); }
+.foils button[aria-pressed="true"] { color: var(--ink); font-weight: 700; }
+.foils button[aria-pressed="true"] .chip { box-shadow: 0 0 0 2px var(--ink); }
+.chip.f0 { background: linear-gradient(125deg, #ffb3d0, #ffe28a, #a8f5d2, #9dceff, #d6b4ff, #ffb3d0); }
+.chip.f1 { background: radial-gradient(circle at 30% 30%, #fff 0 1.5px, transparent 2px) 0 0 / 7px 7px, radial-gradient(circle at 70% 60%, #ffd6f0 0 1px, transparent 1.6px) 0 0 / 5px 5px, linear-gradient(140deg, #cfd6ff, #f3d1ff, #c8f1ff); }
+.chip.f2 { background: radial-gradient(circle at 25% 30%, #fff 0 1px, transparent 1.6px) 0 0 / 11px 11px, radial-gradient(ellipse at 30% 40%, #b78cff, transparent 60%), radial-gradient(ellipse at 75% 70%, #6fd3ff, transparent 60%), #3a2a66; }
+.chip.f3 { background: repeating-linear-gradient(100deg, #ffb6c8 0 8px, #ffe39a 8px 16px, #b5f2d6 16px 24px, #a8d3ff 24px 32px, #d7b8ff 32px 40px); }
+.chip.f4 { background: linear-gradient(130deg, #8a6420, #f6dc96 40%, #b88a33 60%, #fff0bf 80%, #8a6420); }
+label.slider { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 14px; margin: 10px 0 2px; }
+label.slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--ink); }
+label.slider b { font-weight: 400; color: var(--ink-soft); }
+.check { display: flex; gap: 10px; align-items: center; font-size: 14.5px; margin-top: 10px; cursor: pointer; }
+.check input { width: 19px; height: 19px; accent-color: var(--ink); }
+input[type=text] { width: 100%; border: 0; border-radius: 10px; padding: 10px 12px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--line); font-size: 16px; }
+input[type=color] { width: 44px; height: 36px; border: 0; padding: 0; background: none; cursor: pointer; }
+details summary { cursor: pointer; font-size: 14.5px; font-weight: 700; padding: 4px 0; }
+.file { position: relative; overflow: hidden; }
+.file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.note { font-size: 13px; color: var(--ink-soft); margin: 8px 0 0; line-height: 1.5; min-height: 1.3em; }
+.foot { font-size: 12.5px; color: var(--ink-soft); text-align: center; margin-top: 22px; line-height: 1.8; }
+.foot a { color: var(--ink); }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="case" id="case">
+    <header class="top">
+      <h1 class="brand">Foil<small data-t="tagline"></small></h1>
+      <div class="lang" role="group" aria-label="Language">
+        <button data-lang="en">EN</button><button data-lang="zh">中</button><button data-lang="yue">粵</button>
+      </div>
+    </header>
+    <canvas id="stage" aria-label="Your card"></canvas>
+    <div class="fallback" id="fallback" data-t="noGL"></div>
+    <p class="hint" id="hint"></p>
+    <div class="drop" id="drop" data-t="dropHere"></div>
+  </section>
+
+  <aside class="controls">
+    <div class="group">
+      <h2 data-t="art"></h2>
+      <div class="row">
+        <label class="btn primary file"><span data-t="choose"></span><input type="file" id="file" accept="image/*"></label>
+        <button class="btn" id="motionBtn" data-t="motion"></button>
+      </div>
+      <p class="note" data-t="artHint"></p>
+    </div>
+
+    <div class="group">
+      <h2 data-t="foil"></h2>
+      <div class="foils" id="foils"></div>
+      <h2 style="margin-top:14px" data-t="where"></h2>
+      <div class="seg" id="mask"></div>
+      <label class="slider"><span data-t="strength"></span><b id="v-intensity"></b><input type="range" id="intensity" min="0.1" max="1" step="0.05"></label>
+    </div>
+
+    <div class="group">
+      <h2 data-t="cardShape"></h2>
+      <div class="seg" id="size"></div>
+      <label class="slider"><span data-t="corners"></span><b id="v-radius"></b><input type="range" id="radius" min="0" max="0.08" step="0.005"></label>
+    </div>
+
+    <div class="group">
+      <h2 data-t="border"></h2>
+      <div class="row">
+        <input type="color" id="borderColor" aria-label="Border colour">
+        <label class="check" style="margin:0"><input type="checkbox" id="borderFoil"> <span data-t="borderFoil"></span></label>
+      </div>
+      <label class="slider"><span data-t="borderWidth"></span><b id="v-border"></b><input type="range" id="border" min="0" max="0.08" step="0.005"></label>
+    </div>
+
+    <div class="group">
+      <h2 data-t="text"></h2>
+      <input type="text" id="caption" maxlength="40" autocomplete="off">
+      <details style="margin-top:12px">
+        <summary data-t="adjust"></summary>
+        <label class="slider"><span data-t="zoom"></span><b id="v-zoom"></b><input type="range" id="zoom" min="1" max="3" step="0.05"></label>
+        <label class="slider"><span data-t="moveX"></span><b></b><input type="range" id="panX" min="-1" max="1" step="0.02"></label>
+        <label class="slider"><span data-t="moveY"></span><b></b><input type="range" id="panY" min="-1" max="1" step="0.02"></label>
+      </details>
+    </div>
+
+    <div class="group">
+      <h2 data-t="save"></h2>
+      <div class="row">
+        <button class="btn holo" id="saveVideo" data-t="saveVideo"></button>
+        <button class="btn" id="savePNG" data-t="savePNG"></button>
+      </div>
+      <p class="note" id="saveNote"></p>
+    </div>
+
+    <p class="foot">
+      <span data-t="private"></span><br>
+      <a href="https://github.com/tllct122/foil-card">GitHub</a> · <a href="https://buymeacoffee.com/sirene122">☕ Buy me a coffee</a>
+    </p>
+  </aside>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module" src="foil.js"></script>
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+
+  /* ---------- words: English / 中文 / 廣東話 ---------- */
+  const T = {
+    en: {
+      tagline: 'Holo card maker', art: 'Your picture', choose: 'Choose a picture', motion: 'Tilt with my phone', motionOn: 'Tilting with your phone',
+      artHint: 'Or drop or paste an image here. It stays on your device.', dropHere: 'Drop your picture',
+      foil: 'Foil', where: 'Where it shines', strength: 'Shine', cardShape: 'Card', corners: 'Corners', border: 'Border',
+      borderFoil: 'Foil the border too', borderWidth: 'Border width', text: 'Name on the card', captionPh: 'e.g. your name, or nothing',
+      adjust: 'Move & zoom the picture', zoom: 'Zoom', moveX: 'Left / right', moveY: 'Up / down',
+      save: 'Save', saveVideo: 'Save a video', savePNG: 'Save an image', recording: 'Recording 4 seconds…',
+      savedVideo: 'Saved a 4-second vertical video, ready for Reels, Shorts and TikTok.', savedPNG: 'Saved a see-through PNG of your card.',
+      noVideo: "This browser can't record video. Try Chrome or Safari, or save an image instead.",
+      private: 'Free · works offline · your pictures never leave your device', noGL: "This browser can't show the foil. Try a recent Chrome or Safari.",
+      hintMouse: 'Move your mouse over the card', hintTouch: 'Drag on the card, or tilt with your phone',
+      foils: ['Rainbow', 'Glitter', 'Galaxy', 'Prism', 'Gold'], masks: ['Everywhere', 'Bright parts', 'Dark parts', 'Border only'],
+      sizes: ['Photocard', 'Trading card', 'Square'], badImage: "That file couldn't be opened as a picture.",
+    },
+    zh: {
+      tagline: '鐳射閃卡製作器', art: '你的圖片', choose: '選擇圖片', motion: '用手機傾斜', motionOn: '正在用手機傾斜',
+      artHint: '也可以把圖片拖放或貼上到這裡。圖片只會留在你的裝置。', dropHere: '放下你的圖片',
+      foil: '鐳射效果', where: '反光位置', strength: '亮度', cardShape: '卡片', corners: '圓角', border: '邊框',
+      borderFoil: '邊框也有鐳射', borderWidth: '邊框粗幼', text: '卡上的名字', captionPh: '例如你的名字，可以留空',
+      adjust: '移動及縮放圖片', zoom: '縮放', moveX: '左右', moveY: '上下',
+      save: '儲存', saveVideo: '儲存影片', savePNG: '儲存圖片', recording: '正在錄製 4 秒…',
+      savedVideo: '已儲存 4 秒直向影片，可以直接發 Reels、Shorts 和 TikTok。', savedPNG: '已儲存透明背景的卡片 PNG。',
+      noVideo: '這個瀏覽器不能錄影，請試試 Chrome 或 Safari，或先儲存圖片。',
+      private: '免費・可離線使用・圖片不會離開你的裝置', noGL: '這個瀏覽器顯示不到鐳射效果，請用較新的 Chrome 或 Safari。',
+      hintMouse: '把滑鼠移到卡片上', hintTouch: '在卡片上拖動，或用手機傾斜',
+      foils: ['彩虹', '閃粉', '星空', '稜鏡', '燙金'], masks: ['全卡', '亮位', '暗位', '只限邊框'],
+      sizes: ['小卡', '遊戲卡', '正方形'], badImage: '這個檔案不能當圖片打開。',
+    },
+    yue: {
+      tagline: '鐳射閃卡製作器', art: '你張圖', choose: '揀圖', motion: '用手機傾', motionOn: '用緊手機傾',
+      artHint: '都可以將張圖拖入嚟或者貼落嚟。張圖只會留喺你部機。', dropHere: '放低你張圖',
+      foil: '鐳射效果', where: '邊度反光', strength: '光度', cardShape: '卡', corners: '圓角', border: '邊框',
+      borderFoil: '邊框都要鐳射', borderWidth: '邊框粗幼', text: '卡上面寫咩', captionPh: '例如你個名，唔寫都得',
+      adjust: '移位同縮放張圖', zoom: '縮放', moveX: '左右', moveY: '上下',
+      save: '儲存', saveVideo: '存條片', savePNG: '存張圖', recording: '錄緊 4 秒…',
+      savedVideo: '存咗條 4 秒直片，可以直接出 Reels、Shorts 同 TikTok。', savedPNG: '存咗張透明底嘅卡 PNG。',
+      noVideo: '呢個瀏覽器錄唔到片，試下用 Chrome 或者 Safari，或者住存張圖先。',
+      private: '免費・冇網都用得・張圖唔會離開你部機', noGL: '呢個瀏覽器顯示唔到鐳射效果，用新啲嘅 Chrome 或者 Safari 試下。',
+      hintMouse: '將滑鼠移去張卡度', hintTouch: '喺張卡度拖吓，或者用手機傾吓',
+      foils: ['彩虹', '閃粉', '星空', '稜鏡', '燙金'], masks: ['成張卡', '光位', '暗位', '淨係邊框'],
+      sizes: ['小卡', '遊戲卡', '正方形'], badImage: '呢個檔案打唔開做圖。',
+    },
+  };
+  const SIZES = [55 / 85, 63 / 88, 1];
+
+  /* ---------- settings (remembered on this device) ---------- */
+  const KEY = 'foil-card-v1';
+  const guessLang = () => { const l = navigator.language || ''; return /^(zh-(HK|MO)|yue)/i.test(l) ? 'yue' : /^zh/i.test(l) ? 'zh' : 'en'; };
+  const DEFAULTS = { lang: guessLang(), style: 0, mask: 0, intensity: 0.75, size: 0, radius: 0.04, border: 0.03,
+    borderColor: '#FFFFFF', borderFoil: false, caption: '', zoom: 1, panX: 0, panY: 0 };
+  let S = { ...DEFAULTS };
+  try { S = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+  const t = () => T[S.lang] || T.en;
+
+  /* ---------- the picture ---------- */
+  let picture = null;          // the user's image
+  const art = document.createElement('canvas');
+
+  /** A default picture so the page isn't empty: a twilight scene (darker art shows foil best). */
+  function samplePicture() {
+    const c = document.createElement('canvas'); c.width = 800; c.height = 1100;
+    const g = c.getContext('2d');
+    const sky = g.createLinearGradient(0, 0, 0, 1100);
+    sky.addColorStop(0, '#2B2466'); sky.addColorStop(0.45, '#7A4A9E'); sky.addColorStop(0.75, '#E58BA8'); sky.addColorStop(1, '#F7C59F');
+    g.fillStyle = sky; g.fillRect(0, 0, 800, 1100);
+    for (let i = 0; i < 90; i++) { const x = Math.random() * 800, y = Math.random() * 560, r = Math.random() * 2.2 + 0.4; g.globalAlpha = 0.4 + Math.random() * 0.6; g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); }
+    g.globalAlpha = 1;
+    const glow = g.createRadialGradient(560, 300, 60, 560, 300, 230); glow.addColorStop(0, 'rgba(255,240,210,.55)'); glow.addColorStop(1, 'rgba(255,240,210,0)');
+    g.fillStyle = glow; g.fillRect(300, 60, 520, 480);
+    g.fillStyle = '#FFF1D6'; g.beginPath(); g.arc(560, 300, 96, 0, Math.PI * 2); g.fill();
+    const hill = (y, col, amp, f) => { g.fillStyle = col; g.beginPath(); g.moveTo(0, 1100); for (let x = 0; x <= 800; x += 16) g.lineTo(x, y + Math.sin(x / f) * amp); g.lineTo(800, 1100); g.fill(); };
+    hill(800, '#5B3F86', 46, 130); hill(890, '#3E2B6B', 36, 95); hill(980, '#271B4C', 28, 70);
+    return c;
+  }
+
+  /** Cut the picture to the card's inner shape (cover, then the user's zoom & position), and write the caption. */
+  function compose() {
+    const a = SIZES[S.size], b = S.border;
+    const innerA = (a - 2 * b) / (1 - 2 * b);
+    const H = 1400, W = Math.round(H * innerA);
+    art.width = W; art.height = H;
+    const g = art.getContext('2d');
+    const src = picture || samplePicture.cache || (samplePicture.cache = samplePicture());
+    const scale = Math.max(W / src.width, H / src.height) * S.zoom;
+    const dw = src.width * scale, dh = src.height * scale;
+    const x = (W - dw) / 2 + S.panX * (dw - W) / 2, y = (H - dh) / 2 + S.panY * (dh - H) / 2;
+    g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(src, x, y, dw, dh);
+    if (S.caption.trim()) {
+      const grad = g.createLinearGradient(0, H * 0.78, 0, H);
+      grad.addColorStop(0, 'rgba(0,0,0,0)'); grad.addColorStop(1, 'rgba(0,0,0,.45)');
+      g.fillStyle = grad; g.fillRect(0, H * 0.78, W, H * 0.22);
+      g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+      let size = Math.round(H * 0.06);
+      g.font = `800 ${size}px Unbounded, "PingFang HK", "Noto Sans HK", sans-serif`;
+      while (g.measureText(S.caption).width > W * 0.86 && size > 20) { size -= 4; g.font = `800 ${size}px Unbounded, "PingFang HK", "Noto Sans HK", sans-serif`; }
+      g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = 12;
+      g.fillText(S.caption, W / 2, H * 0.94);
+      g.shadowBlur = 0;
+    }
+    if (F) F.setArt(art);
+  }
+
+  function loadFile(file) {
+    if (!file || !/^image\//.test(file.type)) { note($('#saveNote'), t().badImage); return; }
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      // keep big photos manageable
+      const max = 2400, s = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      picture = c; URL.revokeObjectURL(url);
+      S.zoom = 1; S.panX = 0; S.panY = 0; save(); fill(); compose();
+    };
+    img.onerror = () => note($('#saveNote'), t().badImage);
+    img.src = url;
+  }
+
+  /* ---------- controls ---------- */
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  function words() {
+    const w = t();
+    document.documentElement.lang = S.lang === 'en' ? 'en' : 'zh-Hant-HK';
+    document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = w[el.dataset.t]; });
+    document.querySelectorAll('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === S.lang)));
+    $('#caption').placeholder = w.captionPh;
+    $('#foils').innerHTML = w.foils.map((n, i) => `<button data-style="${i}" aria-pressed="${S.style === i}"><span class="chip f${i}"></span>${esc(n)}</button>`).join('');
+    $('#mask').innerHTML = w.masks.map((n, i) => `<button data-mask="${i}" aria-pressed="${S.mask === i}">${esc(n)}</button>`).join('');
+    $('#size').innerHTML = w.sizes.map((n, i) => `<button data-size="${i}" aria-pressed="${S.size === i}">${esc(n)}</button>`).join('');
+    $('#hint').textContent = matchMedia('(hover: hover)').matches ? w.hintMouse : w.hintTouch;
+    $('#motionBtn').textContent = motionOn ? w.motionOn : w.motion;
+  }
+  function fill() {
+    for (const k of ['intensity', 'radius', 'border', 'zoom', 'panX', 'panY']) $('#' + k).value = S[k];
+    $('#borderColor').value = S.borderColor; $('#borderFoil').checked = S.borderFoil; $('#caption').value = S.caption;
+    $('#v-intensity').textContent = Math.round(S.intensity * 100) + '%';
+    $('#v-radius').textContent = Math.round(S.radius / 0.08 * 100) + '%';
+    $('#v-border').textContent = Math.round(S.border / 0.08 * 100) + '%';
+    $('#v-zoom').textContent = S.zoom.toFixed(2) + '×';
+  }
+  function apply() {
+    if (!F) return;
+    F.set({ aspect: SIZES[S.size], style: S.style, mask: S.mask, intensity: S.intensity, border: S.border,
+      radius: S.radius, borderColor: S.borderColor, borderFoil: S.borderFoil });
+  }
+  const changed = (recompose) => { save(); fill(); apply(); if (recompose) compose(); };
+
+  document.querySelector('.lang').addEventListener('click', (e) => { const b = e.target.closest('[data-lang]'); if (!b) return; S.lang = b.dataset.lang; save(); words(); });
+  $('#foils').addEventListener('click', (e) => { const b = e.target.closest('[data-style]'); if (!b) return; S.style = +b.dataset.style; changed(); words(); });
+  $('#mask').addEventListener('click', (e) => { const b = e.target.closest('[data-mask]'); if (!b) return; S.mask = +b.dataset.mask; changed(); words(); });
+  $('#size').addEventListener('click', (e) => { const b = e.target.closest('[data-size]'); if (!b) return; S.size = +b.dataset.size; changed(true); words(); });
+  $('#intensity').oninput = (e) => { S.intensity = +e.target.value; changed(); };
+  $('#radius').oninput = (e) => { S.radius = +e.target.value; changed(); };
+  $('#border').oninput = (e) => { S.border = +e.target.value; changed(true); };
+  $('#borderColor').oninput = (e) => { S.borderColor = e.target.value; changed(); };
+  $('#borderFoil').onchange = (e) => { S.borderFoil = e.target.checked; changed(); };
+  $('#caption').oninput = (e) => { S.caption = e.target.value; changed(true); };
+  for (const k of ['zoom', 'panX', 'panY']) $('#' + k).oninput = (e) => { S[k] = +e.target.value; changed(true); };
+  $('#file').onchange = (e) => { loadFile(e.target.files[0]); e.target.value = ''; };
+
+  // drag & drop, paste
+  const drop = $('#drop');
+  addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('show'); });
+  addEventListener('dragleave', (e) => { if (!e.relatedTarget) drop.classList.remove('show'); });
+  addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('show'); loadFile(e.dataTransfer.files[0]); });
+  addEventListener('paste', (e) => { const f = [...(e.clipboardData?.files || [])].find((x) => x.type.startsWith('image/')); if (f) loadFile(f); });
+
+  let motionOn = false;
+  $('#motionBtn').onclick = async () => { if (F && (await F.useMotion())) { motionOn = true; words(); } };
+  if (!('DeviceOrientationEvent' in window) || matchMedia('(hover: hover)').matches) $('#motionBtn').classList.add('hidden');
+
+  /* ---------- saving ---------- */
+  let noteTimer;
+  function note(el, text) { el.textContent = text; clearTimeout(noteTimer); noteTimer = setTimeout(() => { el.textContent = ''; }, 6000); }
+  function download(blob, name) {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }
+  const fileName = () => (S.caption.trim() || 'foil-card').replace(/[\\/:*?"<>|]+/g, '').slice(0, 30);
+  $('#savePNG').onclick = async () => {
+    if (!F) return;
+    download(await F.savePNG(), `${fileName()}.png`);
+    note($('#saveNote'), t().savedPNG);
+  };
+  $('#saveVideo').onclick = async () => {
+    if (!F) return;
+    const btn = $('#saveVideo'); btn.disabled = true; $('#saveNote').textContent = t().recording;
+    try {
+      const { blob, ext } = await F.saveVideo('#2A1C38', 4);
+      download(blob, `${fileName()}.${ext}`);
+      note($('#saveNote'), t().savedVideo);
+    } catch (e) { note($('#saveNote'), t().noVideo); }
+    btn.disabled = false;
+  };
+
+  /* ---------- start ---------- */
+  let F = null;
+  function ready() { if (F || !window.Foil) return; F = window.Foil; apply(); compose(); }
+  addEventListener('foil-ready', ready);
+  addEventListener('foil-unsupported', () => { $('#stage').classList.add('hidden'); $('#fallback').style.display = 'grid'; });
+  words(); fill(); ready();
+  document.fonts && document.fonts.ready.then(() => { if (S.caption) compose(); });
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>

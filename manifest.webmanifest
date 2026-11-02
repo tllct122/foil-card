@@ -1,0 +1,14 @@
+{
+  "name": "Foil — holo card maker",
+  "short_name": "Foil",
+  "description": "Turn your art into a holographic foil card. 鐳射閃卡製作器",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#2A1C38",
+  "theme_color": "#2A1C38",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
