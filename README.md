@@ -8,11 +8,13 @@ Drop in a drawing, photo or photocard, pick a foil, and tilt: the rainbow light 
 
 **▶ Try it: https://tllct122.github.io/foil-card/**
 
-![Five foils](docs/foils.jpg)
+![Foils](docs/foils.jpg)
+
+![More foils](docs/foils-more.jpg)
 
 ## Features
 
-- ✦ **Five foils**: rainbow holo, glitter, galaxy, prism stripes and gold foil, rendered live as you tilt
+- ✦ **13 foils**: rainbow holo, glitter, galaxy, prism, gold, cracked ice, stars, sunburst, ripple, silver, hearts, pearl and laser grid, rendered live as you tilt
 - 🎯 **Choose where it shines**: everywhere, only the bright parts, only the dark parts (like a reverse holo), or just the border
 - 📱 **Tilt with your phone**: the foil follows your phone's motion. On a computer, move your mouse over the card
 - 🃏 **Card shapes**: K-pop photocard (55 × 85 mm), trading card (63 × 88 mm) or square, with your own corners, border colour and a name on the card

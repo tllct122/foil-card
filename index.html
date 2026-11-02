@@ -63,7 +63,7 @@ button { cursor: pointer; }
 .seg { display: flex; flex-wrap: wrap; gap: 6px; }
 .seg button { border: 0; border-radius: 999px; padding: 8px 13px; font-size: 14px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--line); }
 .seg button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ink); font-weight: 700; }
-.foils { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.foils { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 10px 8px; }
 .foils button { border: 0; background: transparent; padding: 0; font-size: 12px; text-align: center; color: var(--ink-soft); }
 .foils .chip { display: block; aspect-ratio: 5 / 7; border-radius: 9px; margin-bottom: 5px; box-shadow: inset 0 0 0 1.5px var(--line); }
 .foils button[aria-pressed="true"] { color: var(--ink); font-weight: 700; }
@@ -73,6 +73,15 @@ button { cursor: pointer; }
 .chip.f2 { background: radial-gradient(circle at 25% 30%, #fff 0 1px, transparent 1.6px) 0 0 / 11px 11px, radial-gradient(ellipse at 30% 40%, #b78cff, transparent 60%), radial-gradient(ellipse at 75% 70%, #6fd3ff, transparent 60%), #3a2a66; }
 .chip.f3 { background: repeating-linear-gradient(100deg, #ffb6c8 0 8px, #ffe39a 8px 16px, #b5f2d6 16px 24px, #a8d3ff 24px 32px, #d7b8ff 32px 40px); }
 .chip.f4 { background: linear-gradient(130deg, #8a6420, #f6dc96 40%, #b88a33 60%, #fff0bf 80%, #8a6420); }
+.chip.f5 { background: conic-gradient(from 20deg at 30% 40%, #bfe9ff, #ffd1ec, #fff2b8, #c8ffe0, #d9c8ff, #bfe9ff), #ddd; clip-path: none; background-blend-mode: normal;
+  -webkit-mask: none; box-shadow: inset 0 0 0 1.5px var(--line); background-image: linear-gradient(35deg, transparent 48%, rgba(255,255,255,.9) 49% 51%, transparent 52%), linear-gradient(-60deg, transparent 58%, rgba(255,255,255,.9) 59% 61%, transparent 62%), conic-gradient(from 20deg at 30% 40%, #bfe9ff, #ffd1ec, #fff2b8, #c8ffe0, #d9c8ff, #bfe9ff); }
+.chip.f6 { background: radial-gradient(circle at 30% 30%, #fff 0 1.5px, transparent 2.5px) 0 0 / 12px 12px, radial-gradient(circle at 70% 70%, #fff 0 1px, transparent 2px) 0 0 / 9px 9px, linear-gradient(150deg, #e6d6ff, #ffe0f0, #d6f2ff); }
+.chip.f7 { background: repeating-conic-gradient(from 0deg at 50% 50%, #ffc1d8 0 10deg, #ffe7a8 10deg 20deg, #b8f3d8 20deg 30deg, #b3d9ff 30deg 40deg); }
+.chip.f8 { background: repeating-radial-gradient(circle at 40% 45%, #ffc8de 0 4px, #fff0b6 4px 8px, #c3f4dd 8px 12px, #c1defe 12px 16px); }
+.chip.f9 { background: linear-gradient(130deg, #6c737c, #f4f6f8 40%, #9aa2ac 60%, #ffffff 80%, #6c737c); }
+.chip.f10 { background: radial-gradient(circle at 35% 40%, #ff8fbf 0 2.5px, transparent 3px) 0 0 / 10px 10px, linear-gradient(150deg, #ffe3f0, #f3e1ff); }
+.chip.f11 { background: linear-gradient(140deg, #fdf3ff, #e8f7ff 35%, #fff6e5 65%, #f6e8ff); }
+.chip.f12 { background: linear-gradient(rgba(255,255,255,.7) 1px, transparent 1px) 0 0 / 6px 6px, linear-gradient(90deg, rgba(255,255,255,.7) 1px, transparent 1px) 0 0 / 6px 6px, linear-gradient(130deg, #ffbfd6, #fff0a8, #bff4dc, #bcdcff, #dbc4ff); }
 label.slider { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 14px; margin: 10px 0 2px; }
 label.slider input { grid-column: 1 / -1; width: 100%; accent-color: var(--ink); }
 label.slider b { font-weight: 400; color: var(--ink-soft); }
@@ -185,7 +194,7 @@ details summary { cursor: pointer; font-size: 14.5px; font-weight: 700; padding:
       noVideo: "This browser can't record video. Try Chrome or Safari, or save an image instead.",
       private: 'Free · works offline · your pictures never leave your device', noGL: "This browser can't show the foil. Try a recent Chrome or Safari.",
       hintMouse: 'Move your mouse over the card', hintTouch: 'Drag on the card, or tilt with your phone',
-      foils: ['Rainbow', 'Glitter', 'Galaxy', 'Prism', 'Gold'], masks: ['Everywhere', 'Bright parts', 'Dark parts', 'Border only'],
+      foils: ['Rainbow', 'Glitter', 'Galaxy', 'Prism', 'Gold', 'Cracked ice', 'Stars', 'Sunburst', 'Ripple', 'Silver', 'Hearts', 'Pearl', 'Laser grid'], masks: ['Everywhere', 'Bright parts', 'Dark parts', 'Border only'],
       sizes: ['Photocard', 'Trading card', 'Square'], badImage: "That file couldn't be opened as a picture.",
     },
     zh: {
@@ -199,7 +208,7 @@ details summary { cursor: pointer; font-size: 14.5px; font-weight: 700; padding:
       noVideo: '這個瀏覽器不能錄影，請試試 Chrome 或 Safari，或先儲存圖片。',
       private: '免費・可離線使用・圖片不會離開你的裝置', noGL: '這個瀏覽器顯示不到鐳射效果，請用較新的 Chrome 或 Safari。',
       hintMouse: '把滑鼠移到卡片上', hintTouch: '在卡片上拖動，或用手機傾斜',
-      foils: ['彩虹', '閃粉', '星空', '稜鏡', '燙金'], masks: ['全卡', '亮位', '暗位', '只限邊框'],
+      foils: ['彩虹', '閃粉', '星空', '稜鏡', '燙金', '碎冰', '星星', '放射', '水紋', '燙銀', '愛心', '珍珠', '格紋'], masks: ['全卡', '亮位', '暗位', '只限邊框'],
       sizes: ['小卡', '遊戲卡', '正方形'], badImage: '這個檔案不能當圖片打開。',
     },
     yue: {
@@ -213,7 +222,7 @@ details summary { cursor: pointer; font-size: 14.5px; font-weight: 700; padding:
       noVideo: '呢個瀏覽器錄唔到片，試下用 Chrome 或者 Safari，或者住存張圖先。',
       private: '免費・冇網都用得・張圖唔會離開你部機', noGL: '呢個瀏覽器顯示唔到鐳射效果，用新啲嘅 Chrome 或者 Safari 試下。',
       hintMouse: '將滑鼠移去張卡度', hintTouch: '喺張卡度拖吓，或者用手機傾吓',
-      foils: ['彩虹', '閃粉', '星空', '稜鏡', '燙金'], masks: ['成張卡', '光位', '暗位', '淨係邊框'],
+      foils: ['彩虹', '閃粉', '星空', '稜鏡', '燙金', '碎冰', '星星', '放射', '水紋', '燙銀', '愛心', '珍珠', '格紋'], masks: ['成張卡', '光位', '暗位', '淨係邊框'],
       sizes: ['小卡', '遊戲卡', '正方形'], badImage: '呢個檔案打唔開做圖。',
     },
   };

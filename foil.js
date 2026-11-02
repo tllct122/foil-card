@@ -59,10 +59,55 @@ void main() {
     float x = vUv.x * 7.0 + t.x * 2.4 + vUv.y * 1.4;
     float bar = 0.5 + 0.5 * cos(fract(x) * 6.2832);
     foil = hsv(fract(floor(x) / 7.0 + t.y * 0.3 + vUv.y * 0.2), 0.65, 1.0) * (0.3 + 0.7 * bar);
-  } else {                                  // gold foil
+  } else if (uStyle < 4.5 || (uStyle > 8.5 && uStyle < 9.5)) {   // gold / silver foil
     float a = dot(vUv - 0.5, normalize(vec2(0.7, 1.0))) * 2.2 + t.x * 0.9 - t.y * 0.6;
     float sh = 0.5 + 0.5 * sin(a * 5.0);
-    foil = mix(vec3(0.55, 0.38, 0.12), vec3(1.0, 0.9, 0.62), sh) * (0.75 + 0.25 * noise(q * 260.0));
+    vec3 lo = uStyle < 4.5 ? vec3(0.55, 0.38, 0.12) : vec3(0.42, 0.45, 0.5);
+    vec3 hi = uStyle < 4.5 ? vec3(1.0, 0.9, 0.62) : vec3(1.0, 1.0, 1.0);
+    foil = mix(lo, hi, sh) * (0.75 + 0.25 * noise(q * 260.0));
+  } else if (uStyle < 5.5) {                // cracked ice: shattered facets
+    vec2 g = q * 11.0; vec2 cell = floor(g); vec2 f = fract(g);
+    float d1 = 9.0, d2 = 9.0; vec2 best = vec2(0.0);
+    for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+      vec2 o = vec2(float(x), float(y)); vec2 pt = o + hash2(cell + o); float d = length(pt - f);
+      if (d < d1) { d2 = d1; d1 = d; best = cell + o; } else if (d < d2) { d2 = d; }
+    }
+    vec2 n = (hash2(best + 7.7) - 0.5) * 2.2;
+    float facing = pow(max(0.0, 1.0 - length(n - t * 1.2) * 0.7), 2.0);
+    float crack = 1.0 - smoothstep(0.0, 0.06, d2 - d1);
+    foil = hsv(fract(hash(best) * 0.6 + t.x * 0.5 + t.y * 0.3), 0.5, 1.0) * (0.25 + 1.1 * facing) + vec3(crack * 0.6);
+  } else if (uStyle < 6.5) {                // stars: four-point sparkles
+    vec2 g = q * 18.0; vec2 id = floor(g); vec2 f = fract(g) - 0.5 - (hash2(id) - 0.5) * 0.5;
+    float sz = 0.25 + 0.35 * hash(id + 2.0);
+    float star = max(0.0, 1.0 - (abs(f.x * f.y) * 90.0 + length(f) * 2.6 / sz));
+    float facing = pow(max(0.0, 1.0 - length((hash2(id + 5.0) - 0.5) * 2.4 - t * 1.3) * 0.8), 2.0);
+    foil = hsv(fract(hash(id) + t.x * 0.3), 0.35, 1.0) * star * facing * 4.0 + hsv(fract(vUv.x + vUv.y + t.x * 0.4), 0.45, 1.0) * 0.18;
+  } else if (uStyle < 7.5) {                // sunburst rays from the centre
+    vec2 c = p - t * vec2(0.08, -0.08);
+    float ang = atan(c.y, c.x), r = length(c);
+    float rays = 0.5 + 0.5 * cos(ang * 22.0 + t.x * 3.0 - t.y * 2.0);
+    foil = hsv(fract(ang / 6.2832 + r * 0.7 + t.x * 0.45 + t.y * 0.3), 0.6, 1.0) * (0.25 + 0.75 * rays);
+  } else if (uStyle < 8.5) {                // ripple: rings that move with the light
+    float r = length(p - t * vec2(0.18, -0.18));
+    float bands = 0.5 + 0.5 * sin(r * 110.0 - t.x * 5.0 + t.y * 4.0);
+    foil = hsv(fract(r * 2.0 + t.x * 0.4 + t.y * 0.25), 0.5, 1.0) * (0.35 + 0.45 * bands);
+  } else if (uStyle < 10.5) {               // hearts
+    vec2 g = q * 19.0; vec2 id = floor(g); vec2 f = (fract(g) - vec2(0.5, 0.32) - (hash2(id + 9.0) - 0.5) * 0.25) * 2.3;
+    f.x = abs(f.x);
+    float hd = (f.y + f.x > 1.0) ? length(f - vec2(0.25, 0.75)) - 0.3536
+             : sqrt(min(dot(f - vec2(0.0, 1.0), f - vec2(0.0, 1.0)), dot(f - 0.5 * max(f.x + f.y, 0.0), f - 0.5 * max(f.x + f.y, 0.0)))) * sign(f.x - f.y);
+    float heart = (1.0 - smoothstep(-0.02, 0.03, hd)) * step(0.45, hash(id + 4.0));
+    float facing = pow(max(0.0, 1.0 - length((hash2(id) - 0.5) * 2.2 - t * 1.2) * 0.75), 2.0);
+    foil = hsv(fract(hash(id) * 0.3 + 0.88 + t.x * 0.3 + t.y * 0.2), 0.45, 1.0) * heart * (0.35 + 1.4 * facing) + hsv(fract(vUv.y + t.x * 0.4), 0.3, 1.0) * 0.1;
+  } else if (uStyle < 11.5) {               // pearl: soft pastel shimmer
+    float n1 = noise(q * 3.0 + t * 0.8), n2 = noise(q * 9.0 - t);
+    foil = hsv(fract(n1 * 0.8 + vUv.y * 0.4 + t.x * 0.35 + t.y * 0.2), 0.28, 1.0) * (0.55 + 0.45 * n2);
+  } else {                                  // laser grid, like photocard sleeves
+    vec2 g = q * 64.0; vec2 f = abs(fract(g) - 0.5);
+    float line = smoothstep(0.36, 0.5, max(f.x, f.y));
+    float parity = mod(floor(g.x) + floor(g.y), 2.0);
+    float sweep = 0.5 + 0.5 * sin((vUv.x + vUv.y) * 9.0 + t.x * 4.0 - t.y * 3.0);
+    foil = hsv(fract(vUv.x * 0.5 + vUv.y * 0.8 + parity * 0.08 + t.x * 0.5 + t.y * 0.35), 0.55, 1.0) * (0.15 + 0.6 * line + 0.35 * sweep);
   }
 
   float m = 1.0;                            // where the foil goes
@@ -72,7 +117,8 @@ void main() {
   if (uBorderFoil > 0.5) m = max(m, isBorder);
   float k = uIntensity * m;
   // keep the art, tint it with the foil light (bright areas get less, so they don't wash out)
-  vec3 col = uStyle > 3.5
+  bool metal = (uStyle > 3.5 && uStyle < 4.5) || (uStyle > 8.5 && uStyle < 9.5);
+  vec3 col = metal
     ? mix(base, base * foil * 1.5 + foil * 0.12, k)
     : base * (1.0 - 0.3 * k) + foil * k * 0.55 * (1.0 - 0.55 * L) + base * foil * k * 0.35;
 
